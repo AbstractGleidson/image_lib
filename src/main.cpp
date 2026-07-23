@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <image.hpp>
+#include <core.hpp>
 
 int main(int argc, char **argv)
 {
@@ -10,12 +10,16 @@ int main(int argc, char **argv)
 
     Image image;
 
-    int response_read = read_bmp(argv[1], &image);
-    
+    int response_read = read_bmp(argv[1], image);
+
     if (response_read == 1) {
-        print_head_image(&image);
-        print_matriz_image(&image, 3);
-        write_bmp(argv[2], &image);
+        write_bmp(argv[2], image);
+
+        printf("\nAltura: %d\nLargura: %d\nCanais: %d\n", image.get_height(), image.get_width(), image.get_channels());
+        
+        Perl perl = image.get_perl(10, 10); 
+
+        printf("pixel (10, 10): (%d, %d, %d)\n", perl.getRed(), perl.getGreen(), perl.getBlue());
     } else {
         printf("Erro ao ler o arquivo BMP (Erro codigo: %d).\n", response_read);
     }
