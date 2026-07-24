@@ -72,6 +72,12 @@ class Image
         // retorna a imagem binaria
         Image binary(const uint8_t thres = 125);
 
-        friend ImageAcessStatus read_bmp(const char* path_image, Image& image_dst);
-        friend ImageAcessStatus write_bmp(const char* path_image, Image& image);
+        // retorna a imagem em escala de cinza por media 
+        Image gray_scale_mean();
+
+        // retorna a imagem em escala de cinza por media ponderada
+        Image gray_scale();
+
+        friend ImageAcessStatus read_bmp(const char*, Image&, const bool);
+        friend ImageAcessStatus write_bmp(const char*, Image&, const bool);
 };

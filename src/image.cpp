@@ -137,11 +137,66 @@ Image Image::negative()
     return copy;
 }
 
+Image Image::gray_scale_mean()
+{
+    Image copy(*this);
+
+    for(int i = 0; i < copy.get_height(); i++)
+    {
+        for(int j = 0; j < copy.get_width(); j++)
+        {
+            Perl perl = copy.get_perl(j, i);
+
+            int mean = (perl.get_red() + perl.get_green() + perl.get_blue()) / 3;
+
+            copy.set_perl(
+                j, i, 
+                Perl(
+                    mean,
+                    mean,
+                    mean
+                )
+            );
+        }
+    }
+
+    return copy;
+}
+
+Image Image::gray_scale()
+{
+    Image copy(*this);
+
+    for(int i = 0; i < copy.get_height(); i++)
+    {
+        for(int j = 0; j < copy.get_width(); j++)
+        {
+            Perl perl = copy.get_perl(j, i);
+
+            // pesos de acordo com a sensibilidade do olho humano 
+            double weight_red = 0.2126, weight_green = 0.7152, weight_blue = 0.0722; 
+
+            int mean = ((perl.get_red() * weight_red) + (perl.get_green() * weight_green) + (perl.get_blue() * weight_blue)) / 3;
+
+            copy.set_perl(
+                j, i, 
+                Perl(
+                    mean,
+                    mean,
+                    mean
+                )
+            );
+        }
+    }
+
+    return copy;
+}
+
 // converte o para o limiar: channel > thres => 255
 Image Image::binary(const uint8_t thres)
 {
     Image copy(*this);
-
+    
     for(int i = 0; i < copy.get_height(); i++)
     {
         for(int j = 0; j < copy.get_width(); j++)
@@ -152,8 +207,8 @@ Image Image::binary(const uint8_t thres)
                 j, i, 
                 Perl(
                     perl.get_red() > thres? 255 : 0,
-                    perl.get_green() > thres? 255 : 0,
-                    perl.get_blue() > thres? 255 : 0
+                    perl.get_red() > thres? 255 : 0,
+                    perl.get_red() > thres? 255 : 0
                 )
             );
         }

@@ -15,7 +15,7 @@
 //  FILENOTFOUND  - Caso não consiga abrir o arquivo.
 //  FORMATNOTBMP - Caso o formato da imagem não seja .bmp.
 //  SUCCESS  - Caso ocorra corretamente a leitura.  
-ImageAcessStatus read_bmp(const char* path_image, Image& image_dst);
+ImageAcessStatus read_bmp(const char*, Image&, const bool);
 
 // Salva uma imagem .bmp
 //
@@ -26,4 +26,4 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst);
 // Return: 
 // FILEOPENERROR - Caso não consiga criar o arquivo.
 // SUCCESS - Caso ocorra com sucesso o salvamento da imagem.
-ImageAcessStatus write_bmp(const char* path_image, Image& image_dst);
+ImageAcessStatus write_bmp(const char*, Image&, const bool);
