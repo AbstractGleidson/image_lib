@@ -6,26 +6,26 @@ void Perl::set(uint8_t r, uint8_t g, uint8_t b){
     this->blue = b;
 }
 
-uint8_t Perl::getRed() { 
+uint8_t Perl::get_red() { 
     return this->red; 
 }
 
-uint8_t Perl::getGreen() { 
+uint8_t Perl::get_green() { 
     return this->green; 
 }
 
-uint8_t Perl::getBlue() { 
+uint8_t Perl::get_blue() { 
     return this->blue; 
 }
 
-void Perl::setRed(uint8_t r) { 
+void Perl::set_red(uint8_t r) { 
     this->red = r; 
 }
 
-void Perl::setGreen(uint8_t g) { 
+void Perl::set_green(uint8_t g) { 
     this->green = g; 
 }
 
-void Perl::setBlue(uint8_t b) { 
+void Perl::set_blue(uint8_t b) { 
     this->blue = b; 
 }

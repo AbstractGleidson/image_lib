@@ -11,15 +11,15 @@ int main(int argc, char **argv)
     Image image;
 
     int response_read = read_bmp(argv[1], image);
-
+    
     if (response_read == ImageAcessStatus::SUCCESS) {
-        write_bmp(argv[2], image);
+       
+        Image negative = image.negative();
+        Image binary = image.binary();
 
-        printf("Altura: %d\nLargura: %d\nCanais: %d\n", image.get_height(), image.get_width(), image.get_channels());
-        
-        Perl perl = image.get_perl(10, 10); 
-
-        printf("pixel (10, 10): (%d, %d, %d)\n", perl.getRed(), perl.getGreen(), perl.getBlue());
+        // salva resultados
+        write_bmp("../assets/negativer_image.bmp", negative);
+        write_bmp("../assets/binary_image.bmp", binary);
     } else {
         printf("Erro ao ler o arquivo BMP (Erro codigo: %d).\n", response_read);
     }

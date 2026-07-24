@@ -73,7 +73,7 @@ void Image::print_matriz_image(const uint32_t head) {
         printf("\n[");
         for(uint32_t j = 0; j < this->width; j++) {
             Perl& p = get_perl(j, i);
-            printf("(%d, %d, %d)", p.getRed(), p.getGreen(), p.getBlue());
+            printf("(%d, %d, %d)", p.get_red(), p.get_green(), p.get_blue());
             if (j < this->width - 1) printf(", ");
         }
         printf("]\n");
@@ -92,8 +92,8 @@ Image Image::get_red_image() {
     Image copy(*this); 
     for(int i = 0; i < copy.get_height(); i++) {
         for(int j = 0; j < copy.get_width(); j++) {
-            copy.get_perl(j, i).setGreen(0);
-            copy.get_perl(j, i).setBlue(0);
+            copy.get_perl(j, i).set_green(0);
+            copy.get_perl(j, i).set_blue(0);
         }
     }
     return copy;
@@ -103,8 +103,8 @@ Image Image::get_green_image() {
     Image copy(*this); 
     for(int i = 0; i < copy.get_height(); i++) {
         for(int j = 0; j < copy.get_width(); j++) {
-            copy.get_perl(j, i).setRed(0);
-            copy.get_perl(j, i).setBlue(0);
+            copy.get_perl(j, i).set_red(0);
+            copy.get_perl(j, i).set_blue(0);
         }
     }
     return copy;
@@ -114,9 +114,50 @@ Image Image::get_blue_image() {
     Image copy(*this); 
     for(int i = 0; i < copy.get_height(); i++) {
         for(int j = 0; j < copy.get_width(); j++) {
-            copy.get_perl(j, i).setRed(0);
-            copy.get_perl(j, i).setGreen(0);
+            copy.get_perl(j, i).set_red(0);
+            copy.get_perl(j, i).set_green(0);
         }
     }
+    return copy;
+}
+
+Image Image::negative()
+{
+    Image copy(*this); // cria cópia 
+
+    for(int i = 0; i < copy.get_height(); i++)
+    {
+        for(int j = 0; j < copy.get_width(); j++)
+        {
+            Perl perl = copy.get_perl(j, i);
+            copy.set_perl(j, i, ~perl);
+        }
+    }
+
+    return copy;
+}
+
+// converte o para o limiar: channel > thres => 255
+Image Image::binary(const uint8_t thres)
+{
+    Image copy(*this);
+
+    for(int i = 0; i < copy.get_height(); i++)
+    {
+        for(int j = 0; j < copy.get_width(); j++)
+        {
+            Perl perl = copy.get_perl(j, i);
+
+            copy.set_perl(
+                j, i, 
+                Perl(
+                    perl.get_red() > thres? 255 : 0,
+                    perl.get_green() > thres? 255 : 0,
+                    perl.get_blue() > thres? 255 : 0
+                )
+            );
+        }
+    }
+
     return copy;
 }

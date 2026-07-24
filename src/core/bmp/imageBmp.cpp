@@ -120,7 +120,7 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image) {
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
             Perl& p = image.get_perl(j, i);
-            uint8_t bgr[] = {p.getBlue(), p.getGreen(), p.getRed()};
+            uint8_t bgr[] = {p.get_blue(), p.get_green(), p.get_red()};
 
             fwrite(bgr, sizeof(uint8_t), 3, bmp_image); // grava na ordem BGR
         }

@@ -47,10 +47,14 @@ class Image
             return this->channels;
         }
 
-        // retorna o perls na posição adequada
         Perl& get_perl(int x, int y)
         {
             return this->perls[(y * this->width) + x];
+        }
+
+        void set_perl(int x, int y, const Perl perl)
+        {
+            this->perls[(y * this->width) + x] = perl;
         }
 
         // retorna o canal vermelho
@@ -61,6 +65,12 @@ class Image
 
         // retorna o canal azul
         Image get_blue_image();
+
+        // retorna a imagem negativa
+        Image negative();
+
+        // retorna a imagem binaria
+        Image binary(const uint8_t thres = 125);
 
         friend ImageAcessStatus read_bmp(const char* path_image, Image& image_dst);
         friend ImageAcessStatus write_bmp(const char* path_image, Image& image);
