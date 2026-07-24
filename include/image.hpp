@@ -5,6 +5,12 @@
 #include <utils.hpp>
 #include <perl.hpp>
 
+// Formatos de imagem 
+enum ImageFormat{BMP, JPG, PNG};
+
+// status para leitura de imagens
+enum ImageAcessStatus{FILENOTFOUND, FILEOPENERROR, FORMATNOTBMP, SUCCESS};
+
 // Imagem formato bmp
 class Image 
 {
@@ -56,7 +62,6 @@ class Image
         // retorna o canal azul
         Image get_blue_image();
 
-        // possibilita o acesso de atribuitos privados
-        friend int8_t read_bmp(const char* path_image, Image& image_dst);
-        friend int8_t write_bmp(const char* path_image, Image& image);
+        friend ImageAcessStatus read_bmp(const char* path_image, Image& image_dst);
+        friend ImageAcessStatus write_bmp(const char* path_image, Image& image);
 };

@@ -5,36 +5,25 @@
 #include <image.hpp>
 #include <utils.hpp>
 
-enum ImageFormat{BMP, JPG, PNG};
+// Realiza a leitura de uma imagem .bmp.
+//
+// Param:
+// <char* path_image>: Caminho da imagem à ser lida.
+// <Image* image>:  Onde salvar o resuldado da leitura.
+//
+// return:
+//  FILENOTFOUND  - Caso não consiga abrir o arquivo.
+//  FORMATNOTBMP - Caso o formato da imagem não seja .bmp.
+//  SUCCESS  - Caso ocorra corretamente a leitura.  
+ImageAcessStatus read_bmp(const char* path_image, Image& image_dst);
 
-// Cabeçalho do arquivo da imagem
-typedef struct 
-{
-    uint16_t type_file; // extensão do arquivo
-    uint32_t size_file_bytes; // tamanho do arquivo em bytes
-    uint32_t offset_data_field; // deslocamento no arquivo em bytes para o inicio da area de dados 
-} HeadFile;
-
-// Cabeçalho do mapa de bits da imagem 
-typedef struct 
-{
-    uint32_t size_head_bitmap; // tamanho do cabeçalho do bitmap
-    uint32_t width; // largura da imagem em pixels
-    uint32_t height; // altura da imagem em pixels
-    uint16_t size_pixel; // tamanho dos pixels em bits
-    uint32_t compression_image; // tipo de compressão da imagem
-    uint32_t size_image; // tamanho da área de dados da imagem em bytes
-    uint32_t resolution_horizontal_image; //  em pixels por metro
-    uint32_t resolution_vertical_image; // em pixels por metro
-    uint32_t colors_scale_image; // Número de tons de cada cor 
-    uint32_t colors_scale_image_used; // Tons de cada cor realmente utilizado
-} HeadBitMap;
-
-// Formato RGBA, só existe em imagem com menos de 24 bits por pixel
-typedef struct 
-{
-    uint8_t blue, green, red, reserved; // Paleta de cores da imagem
-} ColorsPallet;
-
-int8_t read_bmp(const char* path_image, Image& image_dst);
-int8_t write_bmp(const char* path_image, Image& image_dst);
+// Salva uma imagem .bmp
+//
+// Param:
+// <char *path_image>: Caminho para salvar a imagem.
+// <Image *image>: Imagem á ser salva.
+//
+// Return: 
+// FILEOPENERROR - Caso não consiga criar o arquivo.
+// SUCCESS - Caso ocorra com sucesso o salvamento da imagem.
+ImageAcessStatus write_bmp(const char* path_image, Image& image_dst);

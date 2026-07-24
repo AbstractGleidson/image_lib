@@ -12,10 +12,10 @@ int main(int argc, char **argv)
 
     int response_read = read_bmp(argv[1], image);
 
-    if (response_read == 1) {
+    if (response_read == ImageAcessStatus::SUCCESS) {
         write_bmp(argv[2], image);
 
-        printf("\nAltura: %d\nLargura: %d\nCanais: %d\n", image.get_height(), image.get_width(), image.get_channels());
+        printf("Altura: %d\nLargura: %d\nCanais: %d\n", image.get_height(), image.get_width(), image.get_channels());
         
         Perl perl = image.get_perl(10, 10); 
 
