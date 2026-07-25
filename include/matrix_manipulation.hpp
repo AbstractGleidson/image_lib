@@ -1,0 +1,1 @@
+const double mean(const double *, const int, const int);

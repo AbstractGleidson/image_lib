@@ -11,18 +11,22 @@ int main(int argc, char **argv)
     Image image;
 
     int response_read = read_bmp(argv[1], image, true);
-    
+
     if (response_read == ImageAcessStatus::SUCCESS) {
        
         //Image negative = image.negative();
 
-        Image gray = image.gray_scale_mean();
-        Image binary = image.binary(125);
+        Image gray = image.mean_gray_scale();
+
+        Image blur = image.median_blur(10);
+        //Image blur = gray.median_blur(5);
+
+        Image edges = (gray - blur) * 3;
 
         // salva resultados
-        //write_bmp("../assets/negativer_image.bmp", negative, true);
-        write_bmp("../assets/gray_image.bmp", gray, false);
-        write_bmp("../assets/binary_image.bmp", binary, false);
+        write_bmp("../assets/edges_gray_2.bmp", edges, false);
+        // write_bmp("../assets/blur_color_median.bmp", blur_color, true);
+        // write_bmp("../assets/blur_gray_median.bmp", blur_gray, false);
     } else {
         printf("Erro ao ler o arquivo BMP (Erro codigo: %d).\n", response_read);
     }

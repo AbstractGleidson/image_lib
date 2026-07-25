@@ -59,22 +59,25 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool i
     // calcula o padding para manter o padrão de multiplos de 4 nas linhas
     int padding; 
 
-    // ler paleta de cores 
+    // ler paleta de cores caso seja uma imagem em  escala de cinza
     if(!is_true_color)
     {
-        padding = imageBmpPaddingGrayScale(image_dst.get_width());
-        int color_pallet_bytes = 4 * bitmap.colors_scale_image;
+        padding = imageBmpPaddingGrayScale(image_dst.get_width()); // calcula o pedding para imagens em escala de cinza
 
-        colors_pallet = new ColorsPallet[bitmap.colors_scale_image == 0?256:bitmap.colors_scale_image];
+        int pallet_size = bitmap.colors_scale_image == 0?256:bitmap.colors_scale_image; // pode ser 0 ou 256 pra representar a quantidade de cores máxima
 
+        colors_pallet = new ColorsPallet[pallet_size]; // aloca memória na heap para paletas
+
+        // faz a leitura da paleta de cores 
         for(int i = 0; i < bitmap.colors_scale_image; i++)
         {
             fread(&colors_pallet[i], sizeof(uint8_t), 4, bmp_image);
         }
     }
     else{
+        // calcula o padding para imagem true color 
         padding = imageBmpPaddingTrueColor(image_dst.get_width());
-        // aponta o poteiro do arquivo para a área de ados
+        // aponta o poteiro do arquivo para a área de dados
         fseek(bmp_image, file_image.offset_data_field, SEEK_SET);
     }
 
@@ -125,12 +128,17 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
 
     int padding;
 
+    int true_width;
+
     if(is_true_color)
     {
-        padding = imageBmpPaddingTrueColor(image.get_width()); // preenchimento para alinhar em bytes multiplos de 4 de final de linha 
+        true_width = padding + (width * 3);
+        padding = imageBmpPaddingTrueColor(image.get_width()); // calcula o padding para imagens true color 
     }
     else {
-        padding = imageBmpPaddingGrayScale(image.get_width());
+        int true_width = padding + width;
+
+        padding = imageBmpPaddingGrayScale(image.get_width()); // calcula o padding para imagens em escala de cinza
 
         bitmap_header.colors_scale_image = 256;
         bitmap_header.colors_scale_image_used = 256;
@@ -138,7 +146,7 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
         file_header.offset_data_field = file_header.size_head_file + bitmap_header.size_head_bitmap + (4 * bitmap_header.colors_scale_image);
     }
     
-    int true_width = padding + (width * 3);
+    
 
     // Cabeçalho do arquivo
     file_header.size_file_bytes = (height * true_width) + file_header.size_head_file + bitmap_header.size_head_bitmap;
@@ -173,10 +181,10 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
         for(int i = 0; i < 256; i++)
         {
             uint8_t rgbr[4];
-            rgbr[0] = i;
-            rgbr[1] = i;
-            rgbr[2] = i;
-            rgbr[3] = 0;
+            rgbr[0] = i; // Red
+            rgbr[1] = i; // Green
+            rgbr[2] = i; // Blue
+            rgbr[3] = 0; // reserved
 
             fwrite(rgbr, sizeof(uint8_t), 4, bmp_image);
         }
@@ -188,24 +196,25 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
     
     uint8_t padding_byte = 0;
 
-    // bits da imagem
+    // bytes de dados da imagem
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
 
+            // escreve os bytes para imagem colocoridas
             if(is_true_color){
                 Perl& p = image.get_perl(j, i);
                 uint8_t bgr[] = {p.get_blue(), p.get_green(), p.get_red()};
 
                 fwrite(bgr, sizeof(uint8_t), 3, bmp_image); // grava na ordem BGR
             }
-            else{
+            else{ // escreve os bytes para imagens em escala de cinza
                 Perl& p = image.get_perl(j, i);
                 uint8_t bgr = p.get_blue();
 
                 fwrite(&bgr, sizeof(uint8_t), 1, bmp_image); // grava na ordem BGR
             }
         }
-        // colocando zeros para fazer padding de alinhamento
+        // colocando zeros para fazer padding de alinhamento em multiplos de 4
         for(int p = 0; p < padding; p++) {
             fwrite(&padding_byte, sizeof(uint8_t), 1, bmp_image); 
         }

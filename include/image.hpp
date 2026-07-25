@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <utils.hpp>
 #include <perl.hpp>
+#include <vector>
+#include <algorithm>
 
 // Formatos de imagem 
 enum ImageFormat{BMP, JPG, PNG};
@@ -73,11 +75,102 @@ class Image
         Image binary(const uint8_t thres = 125);
 
         // retorna a imagem em escala de cinza por media 
-        Image gray_scale_mean();
+        Image mean_gray_scale();
 
         // retorna a imagem em escala de cinza por media ponderada
         Image gray_scale();
 
-        friend ImageAcessStatus read_bmp(const char*, Image&, const bool);
-        friend ImageAcessStatus write_bmp(const char*, Image&, const bool);
+        // blur por media 
+        Image mean_blur(const int size_kernel);
+
+        // blur por mediana
+        Image median_blur(const int size_kernel);
+
+        friend ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool is_true_color);
+        friend ImageAcessStatus write_bmp(const char* path_image, Image& image_src, const bool is_true_color);
+
+        Image operator+(Image& other) {
+            Image copy(*this);
+
+            int height = this->height;
+            int width = this->width;
+
+            for(int i = 0; i < height; i++)
+            {
+                for(int j = 0; j < width; j++)
+                {
+                    copy.set_perl(j, i, this->get_perl(j, i) + other.get_perl(j, i));
+                }
+            }
+
+            return copy;
+        }
+
+        Image operator-(Image& other) {
+            Image copy(*this);
+
+            int height = this->height;
+            int width = this->width;
+
+            for(int i = 0; i < height; i++)
+            {
+                for(int j = 0; j < width; j++)
+                {
+                    copy.set_perl(j, i, this->get_perl(j, i) - other.get_perl(j, i));
+                }
+            }
+
+            return copy;
+        }
+
+        Image operator&(Image& other) {
+            Image copy(*this);
+
+            int height = this->height;
+            int width = this->width;
+
+            for(int i = 0; i < height; i++)
+            {
+                for(int j = 0; j < width; j++)
+                {
+                    copy.set_perl(j, i, this->get_perl(j, i) & other.get_perl(j, i));
+                }
+            }
+
+            return copy;
+        }
+
+        Image operator|(Image& other) {
+            Image copy(*this);
+
+            int height = this->height;
+            int width = this->width;
+
+            for(int i = 0; i < height; i++)
+            {
+                for(int j = 0; j < width; j++)
+                {
+                    copy.set_perl(j, i, this->get_perl(j, i) | other.get_perl(j, i));
+                }
+            }
+
+            return copy;
+        }
+
+        Image operator*(const int number) {
+            Image copy(*this);
+
+            int height = this->height;
+            int width = this->width;
+
+            for(int i = 0; i < height; i++)
+            {
+                for(int j = 0; j < width; j++)
+                {
+                    copy.set_perl(j, i, this->get_perl(j, i) * number);
+                }
+            }
+
+            return copy;
+        }
 };

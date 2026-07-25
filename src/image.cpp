@@ -137,7 +137,7 @@ Image Image::negative()
     return copy;
 }
 
-Image Image::gray_scale_mean()
+Image Image::mean_gray_scale()
 {
     Image copy(*this);
 
@@ -210,6 +210,116 @@ Image Image::binary(const uint8_t thres)
                     perl.get_red() > thres? 255 : 0,
                     perl.get_red() > thres? 255 : 0
                 )
+            );
+        }
+    }
+
+    return copy;
+}
+
+Image Image::mean_blur(int size_kernel) {
+    Image copy(*this);
+
+    // dimensões da imagem
+    int height = this->get_height();
+    int width = this->get_width();
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            // inicia as médias 
+            double mean_red = 0, mean_green = 0, mean_blue = 0;
+            int valid_elements = 0;
+
+            for(int offset_i = -size_kernel; offset_i <= size_kernel; offset_i++)
+            {
+                for(int offset_j = -size_kernel; offset_j <= size_kernel; offset_j++)
+                {
+                    // calula as posições do perl da vizinhança 
+                    int neighbor_y = i + offset_i;
+                    int neighbor_x = j + offset_j;
+
+                    // verifica se é uma posição valida
+                    if(neighbor_y >= 0 && neighbor_y < height && neighbor_x >= 0 && neighbor_x < width){
+
+                        // Pega o perl da vizinhança (x, y)
+                        Perl perl = this->get_perl(neighbor_x, neighbor_y);
+
+                        // incrementa as médias 
+                        mean_red += perl.get_red();
+                        mean_green += perl.get_green();
+                        mean_blue += perl.get_blue();
+
+                        valid_elements++; // incrementa a quantidade de perls na média
+                    }
+                }
+            }
+
+            // substituí os valores pela média da vizinhança
+            copy.set_perl(j, i,
+                Perl(
+                    (uint8_t) (mean_red / valid_elements),
+                    (uint8_t) (mean_green / valid_elements),
+                    (uint8_t)(mean_blue / valid_elements)
+                )
+            );
+        }
+    }
+
+    return copy;
+}
+
+Image Image::median_blur(int size_kernel) {
+    Image copy(*this);
+
+     // dimensões da imagem
+    int height = this->get_height();
+    int width = this->get_width();
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            // inicia um vecto para armazenar os valores de intensidade da visinhança
+            std::vector<uint8_t> red_values, green_values, blue_values;
+
+            for(int offset_i = -size_kernel; offset_i <= size_kernel; offset_i++)
+            {
+                for(int offset_j = -size_kernel; offset_j <= size_kernel; offset_j++)
+                {
+                    // calula as posições do perl da vizinhança 
+                    int neighbor_y = i + offset_i;
+                    int neighbor_x = j + offset_j;
+
+                    // verifica se é uma posição valida
+                    if(neighbor_y >= 0 && neighbor_y < height && neighbor_x >= 0 && neighbor_x < width){
+
+                        Perl perl = this->get_perl(neighbor_x, neighbor_y);
+
+                        // insere a intensidade da vizinhança
+                        red_values.push_back(perl.get_red());
+                        green_values.push_back(perl.get_green());
+                        blue_values.push_back(perl.get_blue());
+                    }
+                }
+            }
+
+            // ordena as volores de intensidade 
+            std::sort(red_values.begin(), red_values.end());
+            std::sort(green_values.begin(), green_values.end());
+            std::sort(blue_values.begin(), blue_values.end()); 
+
+            // pega a posição da mediana
+            int median_idx = red_values.size() / 2;
+
+            // substituí os valores pela mediana da vizinhança
+            copy.set_perl(j, i,
+               Perl(
+                red_values[median_idx],
+                green_values[median_idx],
+                blue_values[median_idx]
+               )
             );
         }
     }
