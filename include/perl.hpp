@@ -1,161 +1,31 @@
 #include <stdint.h>
-#include <utils.hpp>
+#include <vector>
 
-// Elemento minimo de imagem
-class Perl 
-{
-    private:
-        uint8_t red; 
-        uint8_t green;
-        uint8_t blue;
+void sum_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels);
 
-    public:
-        // construtor para perls pretos
-        Perl(){
-            this->red = 0;
-            this->green = 0;
-            this->blue = 0;
-        }
+void sub_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels);
 
-        // construtor personalizado, com parâmetros
-        Perl(uint8_t r, uint8_t g, uint8_t b) {
-            this->red = r;
-            this->green = g;
-            this->blue = b;
-        }
+void div_perl(uint8_t *perl_1,  uint8_t *perl_dst, const double div, const uint8_t channels);
 
-        // gets para as cores
-        uint8_t get_red();
-        uint8_t get_green();
-        uint8_t get_blue();
+void mul_perl(uint8_t *perl_1, uint8_t *perl_dst, const double mult, const uint8_t channels);
 
-        // define cores personalizadas
-        void set(uint8_t r, uint8_t g, uint8_t b);
+void bitwise_and_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels);
 
-        // sets para as cores
-        void set_green(uint8_t g);
-        void set_red(uint8_t r);
-        void set_blue(uint8_t b);
+void bitwise_or_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels);
 
-        Perl& operator=(const Perl& other)
-        {
-            if(this == &other) return *this;
-            
-            this->red = other.red;
-            this->green = other.green;
-            this->blue = other.blue;
+void bitwise_not_perl(uint8_t *perl_1, uint8_t *perl_dst, const uint8_t channels);
 
-            return *this;
-        }
 
-        // soma de dois perls
-        Perl operator+(const Perl& other) const {
-            Perl result = Perl();
+std::vector<uint8_t> sum_perl(uint8_t *perl_1, uint8_t *perl_2);
 
-            result.red = min((int) this->red + other.red, 255);
-            result.green = min((int) this->green + other.green, 255);
-            result.blue = min((int) this->blue + other.blue, 255);
-            
-            return result;
-        }
-        
-        // soma de dois perls
-        Perl& operator+=(const Perl& other)
-        {
-            this->red = max(min((int) this->red + other.red, 255), 0);
-            this->green = max(min((int) this->green + other.green, 255), 0);
-            this->blue = max(min((int) this->blue + other.blue, 255), 0);
-            
-            return *this;
-        }
+std::vector<uint8_t> sub_perl(uint8_t *perl_1, uint8_t *perl_2);
 
-        // subtração de dois perls
-        Perl operator-(const Perl& other) const {
-            Perl result = Perl();
+std::vector<uint8_t> div_perl(uint8_t *perl_1, const double div);
 
-            result.red = min(max((int) this->red - other.red, 0), 255);
-            result.green = min(max((int) this->green - other.green, 0), 255);
-            result.blue = min(max((int) this->blue - other.blue, 0), 255);
-            
-            return result;
-        }
+std::vector<uint8_t> mul_perl(uint8_t *perl_1, const double mult);
 
-        // Decremento 
-        Perl& operator-=(const Perl& other)
-        {
-            this->red = min(max((int) this->red - other.red, 0), 255);
-            this->green = min(max((int) this->green - other.green, 0), 255);
-            this->blue = min(max((int) this->blue - other.blue, 0), 255);
-            
-            return *this;
-        }
+std::vector<uint8_t> bitwise_and_perl(uint8_t *perl_1, uint8_t *perl_2);
 
-        // multiplicação de um perl por inteiro 
-        Perl operator*(const uint8_t number) const {
-            Perl result = Perl();
+std::vector<uint8_t> bitwise_or_perl(uint8_t *perl_1, uint8_t *perl_2);
 
-            result.red = max(min((int) this->red * number, 255), 0);
-            result.green = max(min((int) this->green * number, 255), 0);
-            result.blue = max(min((int) this->blue * number, 255), 0);
-
-            return result;
-        }
-
-        // Incremento multiplicativo
-        Perl& operator*=(const uint8_t number)
-        {
-            this->red = max(min((int) this->red * number, 255), 0);
-            this->green = max(min((int) this->green * number, 255), 0);
-            this->blue = max(min((int) this->blue * number, 255), 0);
-            
-            return *this;
-        }
-
-        // multiplicação de um perl por inteiro 
-        Perl operator/(const uint8_t number) const {
-            Perl result = Perl();
-            
-            result.red = max(min((int) this->red / number, 255), 0);
-            result.green = max(min((int) this->green / number, 255), 0);
-            result.blue = max(min((int) this->blue / number, 255), 0);
-            
-            return result;
-        }
-
-        // Incremento multiplicativo
-        Perl& operator/=(const uint8_t number)
-        {
-            this->red = max(min((int) this->red / number, 255), 0);
-            this->green = max(min((int) this->green / number, 255), 0);
-            this->blue = max(min((int) this->blue / number, 255), 0);
-            
-            return *this;
-        }
-
-        // not bitwise 
-        Perl operator~() const {
-            return Perl(255, 255, 255) - *this;
-        }
-
-        // and bitwise  
-        Perl operator&(const Perl& other) const {
-            Perl result; 
-
-            result.red = this->red & other.red;
-            result.green = this->green & other.green;
-            result.blue = this->blue & other.blue; 
-        
-            return result;
-        }
-
-        // or bitewise 
-        Perl operator|(const Perl& other) const {
-            Perl result; 
-
-            result.red = this->red | other.red;
-            result.green = this->green | other.green;
-            result.blue = this->blue | other.blue; 
-
-            return result;
-        }
-};
+std::vector<uint8_t> bitwise_not_perl(uint8_t *perl_1);

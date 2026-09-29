@@ -29,7 +29,7 @@ typedef struct
 
 // Formato RGBA (usado em imagens com paleta/menos de 24 bits por pixel)
 typedef struct 
-{
+{ 
     uint8_t blue = 0;
     uint8_t green = 0;
     uint8_t red = 0;

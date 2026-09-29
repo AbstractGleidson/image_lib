@@ -1,41 +1,77 @@
 #include <image.hpp>
+#include <cmath>
+#include <fstream>
+#include <iostream>
 
 // construtor padrão
 Image::Image()
 {
     this->height = 0; 
     this->width = 0; 
-    this->channels = 0; 
-    this->perls = nullptr; // inicializa o ponteiro da matriz de pixels como nulo 
+    this->channels = nullptr; // ponteiro para os canais
+    this->color_space = RGB; 
 }
 
-// construtor de cópia, memótodo copy
+// construtor personalizado
+Image::Image(int height, int width, uint8_t number_channels, uint8_t *perl, ColorSpace color_space)
+{
+    this->height = height; 
+    this->width = width; 
+    this->color_space = color_space; 
+    this->channels = new uint8_t*[number_channels];
+
+    bool alloc_local = false;
+
+    uint8_t *default_perl = perl;
+    if(perl == nullptr)
+        default_perl = new uint8_t[number_channels]{0}; // oloca um array tamanho channel inicializado com 0
+    
+
+    int elements = this->height * this->width;
+
+    for(int i = 0; i < number_channels; i++)
+    {
+        this->channels[i] = new uint8_t[elements];
+        memset(this->channels[i], default_perl[i], elements * sizeof(uint8_t));
+    }
+
+    if(perl == nullptr)
+        delete[] default_perl;
+}
+
+// construtor de cópia, metodo copy
 Image::Image(const Image& other)
 {
     // cópia valores numericos
     this->height = other.height;
     this->width  = other.width;
-    this->channels = other.channels;
+    this->color_space = other.color_space;
+    int number_channels = this->get_number_channels();
+    this->channels = new uint8_t*[number_channels]; // cria um ponteiro para cada canal
 
-    if(other.perls != nullptr)
+    if(other.channels != nullptr)
     {
-        int size_perls = this->height * this->width;
+        int elements = this->height * this->width; // quantidade de elementos em cada canal
 
-        perls = new Perl[size_perls]; // aloca memória para a matriz de pixels na heap
-        
-        memcpy(perls, other.perls, sizeof(Perl) * size_perls); // cópia o bloco de memória 
+        for(int i = 0; i < number_channels; i++)
+        {
+            this->channels[i] = new uint8_t[elements]; // aloca memoria para cada canal
+            memcpy(this->channels[i], other.channels[i], elements * sizeof(uint8_t)); // cópia o bloco de memória 
+        }
     }
     else{
-        this->perls = nullptr;
+        this->channels  = nullptr;
     }
 }
 
 // destrutor 
 Image::~Image()
 {
-    if(perls != nullptr)
+    if(channels != nullptr)
     {
-        delete[] perls; // libera memória da heap
+        for(int i = 0; i < this->get_number_channels(); i++)
+            delete[] channels[i]; // libera memória da heap para cada canal
+        delete[] channels; // libera os ponteiros duplos
     }
 }
 
@@ -45,173 +81,145 @@ Image& Image::operator=(const Image& other) {
     if (this == &other) return *this; // evita auto atribuição
 
     // evita atribuição para referência null
-    if (perls != nullptr) delete[] perls;
+    if (this->channels != nullptr)
+    {
+        for(int i = 0; i < this->get_number_channels(); i++)
+            delete[] channels[i]; // libera memória dapadrão heap para cada canal
+        delete[] channels; // libera os ponteiros duplos
+        this->channels = nullptr;
+    }
 
-    // copia os valores numericos
+    // cópia valores numericos
     this->height = other.height;
-    this->width = other.width;
-    this->channels = other.channels;
+    this->width  = other.width;
+    this->color_space = other.color_space;
+    int number_channels = this->get_number_channels();
 
-    // cópia matriz de pixels
-    if (other.perls != nullptr) {
-        int total_perls = this->width * this->height;
-        
-        perls = new Perl[total_perls]; // aloca memória na heap para matriz de pixels
-        
-        memcpy(perls, other.perls, sizeof(Perl) * total_perls); // cópia o bloco de memoria da matriz de pixels
-    } else {
-        perls = nullptr;
+    if(other.channels != nullptr)
+    {
+        this->channels = new uint8_t*[number_channels]; // cria um ponteiro para cada canal
+        int elements = this->height * this->width; // quantidade de elementos em cada canal
+
+        for(int i = 0; i < number_channels; i++)
+        {
+            this->channels[i] = new uint8_t[elements]; // aloca memoria para cada canal
+            memcpy(this->channels[i], other.channels[i], elements * sizeof(uint8_t)); // cópia o bloco de memória 
+        }
+    }
+    else{
+        this->channels  = nullptr;
     }
 
     return *this; // retorna a referẽncia 
 }
 
-void Image::print_matriz_image(const uint32_t head) {
-    uint32_t show_head = head > 0 ? min(this->height, head) : this->height;
-
-    for(uint32_t i = 0; i < show_head; i++) {
-        printf("\n[");
-        for(uint32_t j = 0; j < this->width; j++) {
-            Perl& p = get_perl(j, i);
-            printf("(%d, %d, %d)", p.get_red(), p.get_green(), p.get_blue());
-            if (j < this->width - 1) printf(", ");
-        }
-        printf("]\n");
-    }
-}
-
-void Image::print_head_image() {
-    printf("--------------------- Cabeçalho da Image ---------------------\n");
-    printf("Largura da imagem: %d\n", this->get_width());
-    printf("Altura da imagem: %d\n", this->get_height());
-    printf("Quantidade canais da imagem: %hu\n", this->get_channels());
-    printf("---------------------------------------------------------------\n");
-}
-
-Image Image::get_red_image() {
-    Image copy(*this); 
-    for(int i = 0; i < copy.get_height(); i++) {
-        for(int j = 0; j < copy.get_width(); j++) {
-            copy.get_perl(j, i).set_green(0);
-            copy.get_perl(j, i).set_blue(0);
-        }
-    }
-    return copy;
-}
-
-Image Image::get_green_image() {
-    Image copy(*this); 
-    for(int i = 0; i < copy.get_height(); i++) {
-        for(int j = 0; j < copy.get_width(); j++) {
-            copy.get_perl(j, i).set_red(0);
-            copy.get_perl(j, i).set_blue(0);
-        }
-    }
-    return copy;
-}
-
-Image Image::get_blue_image() {
-    Image copy(*this); 
-    for(int i = 0; i < copy.get_height(); i++) {
-        for(int j = 0; j < copy.get_width(); j++) {
-            copy.get_perl(j, i).set_red(0);
-            copy.get_perl(j, i).set_green(0);
-        }
-    }
+Image Image::get_channel(uint8_t channel) {
+    Image copy = Image(this->height, this->width, 1, nullptr, GRAY); 
+    
+    memcpy(copy.channels[0], this->channels[channel], (this->height * this->width) * sizeof(uint8_t));
     return copy;
 }
 
 Image Image::negative()
 {
     Image copy(*this); // cria cópia 
-
-    for(int i = 0; i < copy.get_height(); i++)
-    {
-        for(int j = 0; j < copy.get_width(); j++)
-        {
-            Perl perl = copy.get_perl(j, i);
-            copy.set_perl(j, i, ~perl);
-        }
-    }
-
-    return copy;
+    return ~copy;
 }
 
 Image Image::mean_gray_scale()
 {
-    Image copy(*this);
+    Image copy = Image(this->height, this->width, 1, nullptr, GRAY);
 
-    for(int i = 0; i < copy.get_height(); i++)
+    int number_channels = this->get_number_channels();
+    int height = this->height;
+    int width = this->width;
+            
+    #pragma omp parallel for schedule(dynamic)
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < copy.get_width(); j++)
+        // Alocado dentro do loop para ser thread-safe no OpenMP sem data races
+        uint8_t *perl = new uint8_t[number_channels];
+
+        for(int j = 0; j < width; j++)
         {
-            Perl perl = copy.get_perl(j, i);
+            this->get_perl(i, j, perl);
 
-            int mean = (perl.get_red() + perl.get_green() + perl.get_blue()) / 3;
+            int sum = 0; // Usar int para evitar overflow antes da divisão
+            for(int c = 0; c < number_channels; c++)
+            {
+                sum += perl[c]; 
+            }
 
-            copy.set_perl(
-                j, i, 
-                Perl(
-                    mean,
-                    mean,
-                    mean
-                )
-            );
+            uint8_t mean = static_cast<uint8_t>(sum / number_channels);
+
+            copy.set_perl(i, j, &mean);
         }
+
+        delete[] perl; // Libera o buffer da thread atual
     }
 
     return copy;
 }
 
-Image Image::gray_scale()
+Image Image::RGB_TO_GRAY()
 {
-    Image copy(*this);
+    Image copy = Image(this->height, this->width, 1, nullptr, GRAY);
 
-    for(int i = 0; i < copy.get_height(); i++)
+    int height = this->height;
+    int width = this->width;
+    int number_channels = this->get_number_channels();
+
+    #pragma omp parallel for schedule(dynamic)
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < copy.get_width(); j++)
-        {
-            Perl perl = copy.get_perl(j, i);
+        uint8_t *perl = new uint8_t[number_channels];
 
-            // pesos de acordo com a sensibilidade do olho humano 
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl);
+
+            // Pesos de acordo com a sensibilidade do olho humano 
             double weight_red = 0.2126, weight_green = 0.7152, weight_blue = 0.0722; 
 
-            int mean = ((perl.get_red() * weight_red) + (perl.get_green() * weight_green) + (perl.get_blue() * weight_blue)) / 3;
+            double gray_val = (perl[0] * weight_red) + (perl[1] * weight_green) + (perl[2] * weight_blue);
+            
+            uint8_t gray = (uint8_t) (std::min(std::max((int) (gray_val), 0), 255));
 
-            copy.set_perl(
-                j, i, 
-                Perl(
-                    mean,
-                    mean,
-                    mean
-                )
-            );
+            copy.set_perl(i, j, &gray);
         }
+
+        delete[] perl;
     }
 
     return copy;
 }
 
-// converte o para o limiar: channel > thres => 255
 Image Image::binary(const uint8_t thres)
 {
     Image copy(*this);
-    
-    for(int i = 0; i < copy.get_height(); i++)
-    {
-        for(int j = 0; j < copy.get_width(); j++)
-        {
-            Perl perl = copy.get_perl(j, i);
 
-            copy.set_perl(
-                j, i, 
-                Perl(
-                    perl.get_red() > thres? 255 : 0,
-                    perl.get_red() > thres? 255 : 0,
-                    perl.get_red() > thres? 255 : 0
-                )
-            );
+    int height = this->height;
+    int width = this->width;
+    int number_channels = this->get_number_channels();
+
+    #pragma omp parallel for schedule(dynamic)
+    for(int i = 0; i < height; i++)
+    {
+        uint8_t *perl = new uint8_t[number_channels];
+
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl);
+
+            for(int c = 0; c < number_channels; c++)
+            {
+                perl[c] = (perl[c] > thres) ? 255 : 0;
+            }
+
+            copy.set_perl(i, j, perl);
         }
+
+        delete[] perl; 
     }
 
     return copy;
@@ -220,51 +228,68 @@ Image Image::binary(const uint8_t thres)
 Image Image::mean_blur(int size_kernel) {
     Image copy(*this);
 
-    // dimensões da imagem
+    // Dimensões da imagem
     int height = this->get_height();
     int width = this->get_width();
+    uint8_t number_channels = this->get_number_channels();
 
+    #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < height; i++)
     {
+        uint8_t *neighbor_perl = new uint8_t[number_channels];
+        uint8_t *mean_p = new uint8_t[number_channels];
+        
+        double *means = new double[number_channels];
+
         for(int j = 0; j < width; j++)
         {
-            // inicia as médias 
-            double mean_red = 0, mean_green = 0, mean_blue = 0;
+            // Reseta o acumulador e contadores para o pixel atual
+            for(int c = 0; c < number_channels; c++) {
+                means[c] = 0.0;
+            }
             int valid_elements = 0;
 
+            // Varredura da vizinhança (Kernel)
             for(int offset_i = -size_kernel; offset_i <= size_kernel; offset_i++)
             {
                 for(int offset_j = -size_kernel; offset_j <= size_kernel; offset_j++)
                 {
-                    // calula as posições do perl da vizinhança 
+                    // Calcula as posições da vizinhança (y = linha/altura, x = coluna/largura)
                     int neighbor_y = i + offset_i;
                     int neighbor_x = j + offset_j;
 
-                    // verifica se é uma posição valida
-                    if(neighbor_y >= 0 && neighbor_y < height && neighbor_x >= 0 && neighbor_x < width){
+                    // Verifica se é uma posição válida dentro da imagem
+                    if(neighbor_y >= 0 && neighbor_y < height && neighbor_x >= 0 && neighbor_x < width)
+                    {
+                        this->get_perl(neighbor_y, neighbor_x, neighbor_perl);
 
-                        // Pega o perl da vizinhança (x, y)
-                        Perl perl = this->get_perl(neighbor_x, neighbor_y);
+                        // Incrementa as somas para cada canal
+                        for(int c = 0; c < number_channels; c++)
+                        {
+                            means[c] += neighbor_perl[c];
+                        }
 
-                        // incrementa as médias 
-                        mean_red += perl.get_red();
-                        mean_green += perl.get_green();
-                        mean_blue += perl.get_blue();
-
-                        valid_elements++; // incrementa a quantidade de perls na média
+                        valid_elements++;
                     }
                 }
             }
 
-            // substituí os valores pela média da vizinhança
-            copy.set_perl(j, i,
-                Perl(
-                    (uint8_t) (mean_red / valid_elements),
-                    (uint8_t) (mean_green / valid_elements),
-                    (uint8_t)(mean_blue / valid_elements)
-                )
-            );
+            // Calcula a média final e converte para uint8_t 
+            if(valid_elements > 0)
+            {
+                for(int c = 0; c < number_channels; c++)
+                {
+                    mean_p[c] = static_cast<uint8_t>(means[c] / valid_elements);
+                }
+            }
+
+            // Substitui os valores na imagem 
+            copy.set_perl(i, j, mean_p);
         }
+
+        delete[] neighbor_perl;
+        delete[] mean_p;
+        delete[] means;
     }
 
     return copy;
@@ -273,56 +298,151 @@ Image Image::mean_blur(int size_kernel) {
 Image Image::median_blur(int size_kernel) {
     Image copy(*this);
 
-     // dimensões da imagem
     int height = this->get_height();
     int width = this->get_width();
+    uint8_t number_channels = this->get_number_channels();
 
+    #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < height; i++)
     {
+        uint8_t *neighbor_perl = new uint8_t[number_channels];
+        uint8_t *median_p = new uint8_t[number_channels];
+
         for(int j = 0; j < width; j++)
         {
-            // inicia um vecto para armazenar os valores de intensidade da visinhança
-            std::vector<uint8_t> red_values, green_values, blue_values;
+            // Cria um vetor para armazenar os valores de intensidade da vizinhança de cada canal
+            std::vector<std::vector<uint8_t>> medians(number_channels);
 
             for(int offset_i = -size_kernel; offset_i <= size_kernel; offset_i++)
             {
                 for(int offset_j = -size_kernel; offset_j <= size_kernel; offset_j++)
                 {
-                    // calula as posições do perl da vizinhança 
+                    // Calcula as posições da vizinhança (y = linha/altura, x = coluna/largura)
                     int neighbor_y = i + offset_i;
                     int neighbor_x = j + offset_j;
 
-                    // verifica se é uma posição valida
-                    if(neighbor_y >= 0 && neighbor_y < height && neighbor_x >= 0 && neighbor_x < width){
+                    // Verifica se é uma posição válida
+                    if(neighbor_y >= 0 && neighbor_y < height && neighbor_x >= 0 && neighbor_x < width)
+                    {
+                        // Pega o perl da vizinhança usando a ordem correta (row, col)
+                        this->get_perl(neighbor_y, neighbor_x, neighbor_perl);
 
-                        Perl perl = this->get_perl(neighbor_x, neighbor_y);
-
-                        // insere a intensidade da vizinhança
-                        red_values.push_back(perl.get_red());
-                        green_values.push_back(perl.get_green());
-                        blue_values.push_back(perl.get_blue());
+                        // Insere a intensidade da vizinhança no canal correspondente
+                        for(int c = 0; c < number_channels; c++)
+                        {
+                            medians[c].push_back(neighbor_perl[c]);
+                        }
                     }
                 }
             }
 
-            // ordena as volores de intensidade 
-            std::sort(red_values.begin(), red_values.end());
-            std::sort(green_values.begin(), green_values.end());
-            std::sort(blue_values.begin(), blue_values.end()); 
+            // Calcula a mediana para cada canal
+            for(int c = 0; c < number_channels; c++)
+            {
+                if(!medians[c].empty())
+                {
+                    // Ordena os valores de intensidade
+                    std::sort(medians[c].begin(), medians[c].end());
+                    
+                    // Pega o elemento do meio (mediana)
+                    int median_idx = medians[c].size() / 2;
+                    median_p[c] = medians[c][median_idx];  
+                }
+                else {
+                    median_p[c] = 0;
+                }
+            }
 
-            // pega a posição da mediana
-            int median_idx = red_values.size() / 2;
-
-            // substituí os valores pela mediana da vizinhança
-            copy.set_perl(j, i,
-               Perl(
-                red_values[median_idx],
-                green_values[median_idx],
-                blue_values[median_idx]
-               )
-            );
+            copy.set_perl(i, j, median_p);
         }
+
+        // Libera os buffers temporários da thread atual
+        delete[] neighbor_perl;
+        delete[] median_p;
     }
 
     return copy;
+}
+
+std::vector<int> Image::hist(const uint8_t channel)
+{
+    std::vector<int> frequency(256, 0);
+    uint8_t *perl = new uint8_t[this->get_number_channels()];
+
+    for(int i = 0; i < this->height; i++)
+    {
+        for(int j = 0; j < this->width; j++)
+        {
+            this->get_perl(i, j, perl);
+            frequency[perl[channel]]++;
+        }   
+    }
+
+    delete [] perl;
+
+    return frequency;
+}
+
+Image Image::equalize(const uint8_t channel)
+{
+    Image copy = this->get_channel(channel);
+    std::vector<int> frequency = copy.hist(0);
+    std::vector<double> accumulated(256, 0);
+    std::vector<int> transform_function(256, 0);
+
+    int height = copy.get_height();
+    int width = copy.get_width();
+
+    int full_perls = height * width;
+
+    for(int i = 0; i < 256; i++){
+        if(i > 0)
+            accumulated[i] = (accumulated[i - 1]) + (frequency[i] / (double) full_perls);
+        else
+            accumulated[i] = (frequency[i] / (double) full_perls);
+
+        transform_function[i] = std::round(accumulated[i] * 255);  
+
+        std::cout << transform_function[i] << std::endl;
+    }
+
+    uint8_t *perl = new uint8_t[copy.get_number_channels()];
+
+    for(int i = 0; i < copy.get_height(); i++)
+    {
+        for(int j = 0; j < copy.get_width(); j++)
+        {
+            copy.get_perl(i, j, perl);
+            *perl = transform_function[*perl]; // aplica a função de transformação
+            copy.set_perl(i, j, perl);
+        }
+    }
+
+    delete [] perl;
+
+    return copy;
+}
+
+void Image::write_hist(const char path[])
+{
+    std::ofstream file(path); // cria o arquivo
+
+    std::vector<int> frequency = this->hist(0); // gera o histograma
+
+    if(file.is_open())
+    {
+        for(int i = 0; i < 256; i++)
+        {
+            file << "Intensidade: " << i << "  Frequencia: " << frequency[i] << std::endl;
+        }
+        file.close();
+    }
+}
+
+void Image::show_hist()
+{
+
+    this->write_hist("hist.txt"); // escreve o histograma em arquivo temp
+    int resultado = std::system("python ../src/aux_python/hist.py");
+    resultado = std::system("rm hist.txt");
 }

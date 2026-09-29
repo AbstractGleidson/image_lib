@@ -20,3 +20,5 @@ int min(const int a, const int b);
 // Return:
 // menor inteiro entre a e b
 int max(const int a, const int b);
+
+const int index_image(const int x, const int y, const int width);

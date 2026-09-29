@@ -43,25 +43,17 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool i
     fread(&bitmap.colors_scale_image, sizeof(bitmap.colors_scale_image), 1, bmp_image);
     fread(&bitmap.colors_scale_image_used, sizeof(bitmap.colors_scale_image_used), 1, bmp_image);
 
-    // desaloca a memória nos casos necessarios 
-    if (image_dst.perls != nullptr) delete[] image_dst.perls;
-
-    image_dst.perls = new Perl[bitmap.height * bitmap.width]; // aloca memória na heap para a matriz de perls 
-
-    image_dst.height = bitmap.height; // cópia altura 
-    image_dst.width = bitmap.width; // cópia largura 
-    image_dst.channels = bitmap.size_pixel / 8; // calcula a quantidade de canais
-
-    uint8_t rgb[3];
-
     ColorsPallet *colors_pallet = nullptr;
 
     // calcula o padding para manter o padrão de multiplos de 4 nas linhas
     int padding; 
+    uint8_t *perl = new uint8_t[is_true_color? 3: 1]{0};
 
     // ler paleta de cores caso seja uma imagem em  escala de cinza
     if(!is_true_color)
     {
+        image_dst = Image(bitmap.height, bitmap.width, 1, nullptr, GRAY); // cria uma imagem em escala de cinza
+
         padding = imageBmpPaddingGrayScale(image_dst.get_width()); // calcula o pedding para imagens em escala de cinza
 
         int pallet_size = bitmap.colors_scale_image == 0?256:bitmap.colors_scale_image; // pode ser 0 ou 256 pra representar a quantidade de cores máxima
@@ -75,6 +67,8 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool i
         }
     }
     else{
+        image_dst = Image(bitmap.height, bitmap.width, 3, nullptr, RGB); // cria uma imagem no espaço RGB
+
         // calcula o padding para imagem true color 
         padding = imageBmpPaddingTrueColor(image_dst.get_width());
         // aponta o poteiro do arquivo para a área de dados
@@ -88,22 +82,16 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool i
             // imagem true color(colorida)
             if(is_true_color){
                 // faz a leitura dos bytes para os pixels 
-                if(fread(rgb, sizeof(uint8_t), 3, bmp_image) == 3)
+                if(fread(perl, sizeof(uint8_t), 3, bmp_image) == 3)
                 {
-                    image_dst.get_perl(j, i).set(rgb[2], rgb[1], rgb[0]); /// leitura na forma BGR
+                    image_dst.set_perl(i, j, perl); /// leitura na forma BGR
                 }
             }
             // imagem em escala de cinza
             else{
-                if(fread(rgb, sizeof(uint8_t), 1, bmp_image) == 1)
+                if(fread(perl, sizeof(uint8_t), 1, bmp_image) == 1)
                 {
-                    image_dst.set_perl(j, i, 
-                        Perl(
-                            colors_pallet[rgb[0]].red, 
-                            colors_pallet[rgb[0]].green, 
-                            colors_pallet[rgb[0]].blue
-                        )
-                    );
+                    image_dst.set_perl(i, j, perl);
                 }
             }
         }
@@ -112,6 +100,7 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool i
     fclose(bmp_image);
 
     delete[] colors_pallet; // desaloca a memoria da paleta de cores da heap
+    delete[] perl;
     return ImageAcessStatus::SUCCESS; 
 }
 
@@ -146,8 +135,6 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
         file_header.offset_data_field = file_header.size_head_file + bitmap_header.size_head_bitmap + (4 * bitmap_header.colors_scale_image);
     }
     
-    
-
     // Cabeçalho do arquivo
     file_header.size_file_bytes = (height * true_width) + file_header.size_head_file + bitmap_header.size_head_bitmap;
 
@@ -195,6 +182,7 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
     }
     
     uint8_t padding_byte = 0;
+    uint8_t *perl = new uint8_t[image.get_number_channels()];
 
     // bytes de dados da imagem
     for(uint32_t i = 0; i < height; i++) {
@@ -202,16 +190,15 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
 
             // escreve os bytes para imagem colocoridas
             if(is_true_color){
-                Perl& p = image.get_perl(j, i);
-                uint8_t bgr[] = {p.get_blue(), p.get_green(), p.get_red()};
+                image.get_perl(i, j, perl);
+                uint8_t bgr[] = {perl[2], perl[1], perl[0]};
 
                 fwrite(bgr, sizeof(uint8_t), 3, bmp_image); // grava na ordem BGR
             }
             else{ // escreve os bytes para imagens em escala de cinza
-                Perl& p = image.get_perl(j, i);
-                uint8_t bgr = p.get_blue();
-
-                fwrite(&bgr, sizeof(uint8_t), 1, bmp_image); // grava na ordem BGR
+                image.get_perl(i, j, perl);
+                
+                fwrite(perl, sizeof(uint8_t), 1, bmp_image); // grava na ordem BGR
             }
         }
         // colocando zeros para fazer padding de alinhamento em multiplos de 4

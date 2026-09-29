@@ -1,31 +1,81 @@
 #include <perl.hpp>
+#include <stdint.h>
 
-void Perl::set(uint8_t r, uint8_t g, uint8_t b){
-    this->red = r;
-    this->green = g;
-    this->blue = b;
+void sum_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // soma e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = std::min(std::max(perl_1[i] + perl_2[i], 0), 255);
+    }
 }
 
-uint8_t Perl::get_red() { 
-    return this->red; 
+void sub_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // subtrai e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = std::min(std::max(perl_1[i] - perl_2[i], 0), 255);
+    }
 }
 
-uint8_t Perl::get_green() { 
-    return this->green; 
+void mul_perl(uint8_t *perl_1, uint8_t *perl_dst, const double number, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // multiplica e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = std::min(std::max((int) (perl_1[i] * number), 0), 255);
+    }
 }
 
-uint8_t Perl::get_blue() { 
-    return this->blue; 
+void div_perl(uint8_t *perl_1, uint8_t *perl_dst, const double number, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // divide e coloca o resultado no perl_1
+
+    if (number == 0.0) return; // divisão por zero
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = std::min(std::max((int) (perl_1[i] / number), 0), 255);
+    }
 }
 
-void Perl::set_red(uint8_t r) { 
-    this->red = r; 
+void bitwise_and_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // bitwise and e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = perl_1[i] & perl_2[i];
+    }
 }
 
-void Perl::set_green(uint8_t g) { 
-    this->green = g; 
+void bitwise_or_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // bitwise or e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = perl_1[i] | perl_2[i];
+    }
 }
 
-void Perl::set_blue(uint8_t b) { 
-    this->blue = b; 
+void bitwise_not_perl(uint8_t *perl_1, uint8_t *perl_dst, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // bitwise not e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = ~perl_1[i];
+    }
 }

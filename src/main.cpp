@@ -1,5 +1,6 @@
-#include <stdio.h>
+#include <iostream>
 #include <core.hpp>
+#include <fstream>
 
 int main(int argc, char **argv)
 {
@@ -10,26 +11,20 @@ int main(int argc, char **argv)
 
     Image image;
 
-    int response_read = read_bmp(argv[1], image, true);
+    read_bmp(argv[1], image, false);
 
-    if (response_read == ImageAcessStatus::SUCCESS) {
-       
-        //Image negative = image.negative();
+    uint8_t *perl = new uint8_t[image.get_number_channels()];
 
-        Image gray = image.mean_gray_scale();
+    //std::vector<int> frequency = image.hist(0);
 
-        Image blur = image.median_blur(10);
-        //Image blur = gray.median_blur(5);
+    //image.show_hist();
 
-        Image edges = (gray - blur) * 3;
+    Image image_bin = image.equalize(0);
 
-        // salva resultados
-        write_bmp("../assets/edges_gray_2.bmp", edges, false);
-        // write_bmp("../assets/blur_color_median.bmp", blur_color, true);
-        // write_bmp("../assets/blur_gray_median.bmp", blur_gray, false);
-    } else {
-        printf("Erro ao ler o arquivo BMP (Erro codigo: %d).\n", response_read);
-    }
+    image_bin.show_hist();
+    image.show_hist();
+
+    write_bmp(argv[2], image_bin, false);
 
     return 0;
 }
