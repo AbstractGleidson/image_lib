@@ -82,9 +82,9 @@ class Image
 
         void set_perl(int row, int column, std::vector<uint8_t> perl)
         {
-            uint8_t size_channel = this->get_number_channels();
+            uint8_t number_channels = this->get_number_channels();
 
-            for(int i = 0; i < this->get_number_channels(); i++)
+            for(int i = 0; i < number_channels; i++)
             {
                 this->channels[i][index_image(row, column, this->width)] = perl[i];
             }
@@ -92,9 +92,9 @@ class Image
 
         void set_perl(int row, int column, uint8_t *perl)
         {
-            uint8_t size_channel = this->get_number_channels();
+            uint8_t number_channels = this->get_number_channels();
 
-            for(int i = 0; i < this->get_number_channels(); i++)
+            for(int i = 0; i < number_channels; i++)
             {
                 this->channels[i][index_image(row, column, this->width)] = perl[i];
             }
@@ -124,8 +124,13 @@ class Image
         // retorna o histograma da imagem
         std::vector<int> hist(const uint8_t channel);
 
+        // retorna o histograma normalizado
+        std::vector<double> hist(const uint8_t channel, const bool is_norm);
+
         // equaliza o histrograma do canal 0
         Image equalize(const uint8_t channel);
+
+        Image equalize_esp(const uint8_t channel, std::vector<double> hist);
 
         void write_hist(const char path[]);
 

@@ -379,9 +379,32 @@ std::vector<int> Image::hist(const uint8_t channel)
     }
 
     delete [] perl;
+    return frequency;
+}
+
+std::vector<double> Image::hist(const uint8_t channel, const bool is_norm)
+{
+    std::vector<double> frequency(256, 0);
+    uint8_t *perl = new uint8_t[this->get_number_channels()];
+
+    for(int i = 0; i < this->height; i++)
+    {
+        for(int j = 0; j < this->width; j++)
+        {
+            this->get_perl(i, j, perl);
+            frequency[perl[channel]]++;
+        }   
+    }
+
+    delete [] perl;
+
+    if(is_norm)
+        for(int i = 0; i < 256; i++)
+            frequency[i] = frequency[i] /  (this->height * this->width);
 
     return frequency;
 }
+
 
 Image Image::equalize(const uint8_t channel)
 {
@@ -402,8 +425,6 @@ Image Image::equalize(const uint8_t channel)
             accumulated[i] = (frequency[i] / (double) full_perls);
 
         transform_function[i] = std::round(accumulated[i] * 255);  
-
-        std::cout << transform_function[i] << std::endl;
     }
 
     uint8_t *perl = new uint8_t[copy.get_number_channels()];
@@ -414,6 +435,70 @@ Image Image::equalize(const uint8_t channel)
         {
             copy.get_perl(i, j, perl);
             *perl = transform_function[*perl]; // aplica a função de transformação
+            copy.set_perl(i, j, perl);
+        }
+    }
+
+    delete [] perl;
+
+    return copy;
+}
+
+Image Image::equalize_esp(const uint8_t channel, std::vector<double> hist_esp)
+{
+    Image copy = this->get_channel(channel);
+
+    std::vector<int> hist_origem  = copy.hist(0);
+    std::vector<double> accumulated_origem(256, 0);
+    std::vector<double> accumulated_esp(256, 0);
+    std::vector<double> transform_origem(256, 0);
+    std::vector<double> transform_esp(256, 0);
+    std::vector<double> transform_origem_to_esp(256, 0);
+
+    int height = copy.get_height();
+    int width = copy.get_width();
+
+    int full_perls = height * width;
+
+    for(int i = 0; i < 256; i++){
+        if(i > 0){
+            accumulated_origem[i] = (accumulated_origem[i - 1]) + (hist_origem[i] / (double) full_perls);
+            accumulated_esp[i] = (accumulated_esp[i - 1]) + hist_esp[i];
+        }    
+        else{
+            accumulated_origem[i] = (hist_origem[i] / (double) full_perls);
+            accumulated_esp[i] = hist_esp[i];
+
+        }
+        transform_origem[i] = accumulated_origem[i] * 255; // Função de transformação da original
+        transform_esp[i] = accumulated_esp[i] * 255; // Função de transformação da especificada
+    }
+
+    // Faz o emparelhamento entre as funções de transformaçõeos
+    for(int i = 0; i < 256; i++)
+    {
+        int dist = std::abs(transform_origem[i] - transform_esp[0]);
+        int index_min = 0;
+
+        for(int j = 0; j < 256; j++)
+        {
+            if(dist > std::abs(transform_origem[i] - transform_esp[j])){
+                index_min = j;
+                dist = std::abs(transform_origem[i] - transform_esp[j]);
+            }
+        }
+
+        transform_origem_to_esp[i] = index_min;
+    }
+
+    uint8_t *perl = new uint8_t[copy.get_number_channels()];
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            copy.get_perl(i, j, perl);
+            *perl = transform_origem_to_esp[*perl]; // aplica a função de transformação
             copy.set_perl(i, j, perl);
         }
     }

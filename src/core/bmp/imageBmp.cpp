@@ -191,7 +191,7 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
             // escreve os bytes para imagem colocoridas
             if(is_true_color){
                 image.get_perl(i, j, perl);
-                uint8_t bgr[] = {perl[2], perl[1], perl[0]};
+                uint8_t bgr[] = {perl[2], perl[1], perl[0], 0};
 
                 fwrite(bgr, sizeof(uint8_t), 3, bmp_image); // grava na ordem BGR
             }
