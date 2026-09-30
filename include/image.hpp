@@ -45,7 +45,7 @@ class Image
         }
 
         // retorna a quantidade de canais
-        uint8_t get_number_channels()
+        const uint8_t get_number_channels()
         {
             switch (color_space)
             {

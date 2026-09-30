@@ -80,37 +80,40 @@ Image::~Image()
 Image& Image::operator=(const Image& other) {
     if (this == &other) return *this; // evita auto atribuição
 
-    // evita atribuição para referência null
+    // libera a memória atual 
     if (this->channels != nullptr)
     {
-        for(int i = 0; i < this->get_number_channels(); i++)
-            delete[] channels[i]; // libera memória dapadrão heap para cada canal
-        delete[] channels; // libera os ponteiros duplos
+        int current_channels = this->get_number_channels();
+        for(int i = 0; i < current_channels; i++)
+            delete[] channels[i]; 
+        delete[] channels; 
         this->channels = nullptr;
     }
 
-    // cópia valores numericos
+    // copia os valores numéricos da nova imagem
     this->height = other.height;
     this->width  = other.width;
     this->color_space = other.color_space;
-    int number_channels = this->get_number_channels();
+    
+    int number_channels = this->get_number_channels(); 
 
+    // aloca e copia os dados se a outra imagem possuir canais válidos
     if(other.channels != nullptr)
     {
-        this->channels = new uint8_t*[number_channels]; // cria um ponteiro para cada canal
-        int elements = this->height * this->width; // quantidade de elementos em cada canal
+        this->channels = new uint8_t*[number_channels]; 
+        int elements = this->height * this->width; 
 
         for(int i = 0; i < number_channels; i++)
         {
-            this->channels[i] = new uint8_t[elements]; // aloca memoria para cada canal
-            memcpy(this->channels[i], other.channels[i], elements * sizeof(uint8_t)); // cópia o bloco de memória 
+            this->channels[i] = new uint8_t[elements]; 
+            memcpy(this->channels[i], other.channels[i], elements * sizeof(uint8_t)); 
         }
     }
-    else{
-        this->channels  = nullptr;
+    else {
+        this->channels = nullptr;
     }
 
-    return *this; // retorna a referẽncia 
+    return *this; 
 }
 
 Image Image::get_channel(uint8_t channel) {
@@ -404,7 +407,6 @@ std::vector<double> Image::hist(const uint8_t channel, const bool is_norm)
 
     return frequency;
 }
-
 
 Image Image::equalize(const uint8_t channel)
 {

@@ -9,26 +9,39 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    Image lena, polen;
+    // Image lena, sankara, eins;
 
-    read_bmp(argv[1], lena, true);
-    //read_bmp(argv[2], polen, false);
+    // read_bmp("../assets/lena_gray.bmp", lena, false);
+    // read_bmp("../assets/teste.bmp", sankara, true);
+    // read_bmp("../assets/einstein.bmp", eins, true);
 
-    // std::vector<double> fdp_esp = lena.hist(0, true);
-
-    // Image einsten_esp = einsten.equalize_esp(0, fdp_esp);
 
     // Image lena_equalize = lena.equalize(0);
+    // Image sankara_equalize = sankara.equalize(0);
+
+
+    // std::vector<double> eins_hist = eins.hist(0, true);
+
+    // Image lena_esp = lena.equalize_esp(0, eins_hist);
+    // Image sankara_esp = sankara.equalize_esp(0, eins_hist);
+
 
     // lena.show_hist();
-    // einsten.show_hist();
-    // einsten_esp.show_hist();
+    // sankara.show_hist();
+    // eins.show_hist();
+
     // lena_equalize.show_hist();
+    // sankara_equalize.show_hist();
 
-    // //Image image_bin = image.equalize(0);
+    // lena_esp.show_hist();
+    // sankara_esp.show_hist();
 
-    //write_bmp(argv[3], lena_equalize, false);
+    // // //Image image_bin = image.equalize(0);
 
-    write_bmp(argv[2], lena, true);
+    // write_bmp("../assets/equalize_lena.bmp", lena_equalize, false);
+    // write_bmp("../assets/equalize_sankara.bmp", sankara_equalize, false);
+    // write_bmp("../assets/esp_lena.bmp", lena_esp, false);
+    // write_bmp("../assets/esp_sankara.bmp", sankara_esp, false);
+
     return 0;
 }
