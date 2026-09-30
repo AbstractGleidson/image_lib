@@ -54,7 +54,7 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool i
 
     // Leitura de paleta ou ajuste de ponteiro para dados
     if(!is_true_color) {
-        image_dst = Image(bitmap.height, bitmap.width, 1, nullptr, GRAY); 
+        image_dst = Image(bitmap.height, bitmap.width, nullptr, GRAY); 
         padding = imageBmpPaddingGrayScale(image_dst.get_width()); 
 
         int pallet_size = (bitmap.colors_scale_image == 0) ? 256 : bitmap.colors_scale_image; 
@@ -65,7 +65,7 @@ ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool i
         }
     }
     else {
-        image_dst = Image(bitmap.height, bitmap.width, 3, nullptr, RGB); 
+        image_dst = Image(bitmap.height, bitmap.width, nullptr, RGB); 
         padding = imageBmpPaddingTrueColor(image_dst.get_width());
         
         // Garante que o ponteiro vai exatamente onde começam os dados de pixel
@@ -171,7 +171,7 @@ ImageAcessStatus write_bmp(const char* path_image, Image& image, const bool is_t
     }
     
     uint8_t padding_byte = 0;
-    int num_channels = image.get_number_channels();
+    int num_channels = Image::get_number_channels(image.get_color_space());
     uint8_t *perl = new uint8_t[num_channels];
 
     for(uint32_t i = 0; i < height; i++) {

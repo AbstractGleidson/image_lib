@@ -13,30 +13,31 @@ Image::Image()
 }
 
 // construtor personalizado
-Image::Image(int height, int width, uint8_t number_channels, uint8_t *perl, ColorSpace color_space)
+Image::Image(const uint16_t height, const uint16_t width, uint8_t *perl, const ColorSpace color_space)
 {
     this->height = height; 
     this->width = width; 
     this->color_space = color_space; 
-    this->channels = new uint8_t*[number_channels];
 
-    bool alloc_local = false;
+    uint8_t number_channels = get_number_channels(color_space); // converte o numero de canais em função do espaço de cor
 
-    uint8_t *default_perl = perl;
+    this->channels = new uint8_t*[number_channels]; // alloca memória para os ponteiros
+
+    uint8_t *default_perl = perl; // perls padrão que irá preencher a imagem
+
     if(perl == nullptr)
-        default_perl = new uint8_t[number_channels]{0}; // oloca um array tamanho channel inicializado com 0
-    
+        default_perl = new uint8_t[number_channels]{0}; // aloca um array inicializado com 0
 
     int elements = this->height * this->width;
 
-    for(int i = 0; i < number_channels; i++)
+    for(uint8_t i = 0; i < number_channels; i++)
     {
-        this->channels[i] = new uint8_t[elements];
-        memset(this->channels[i], default_perl[i], elements * sizeof(uint8_t));
+        this->channels[i] = new uint8_t[elements]; // aloca memoria para cada canal
+        memset(this->channels[i], default_perl[i], elements * sizeof(uint8_t)); // preenche com o valor do perl 
     }
 
     if(perl == nullptr)
-        delete[] default_perl;
+        delete[] default_perl; 
 }
 
 // construtor de cópia, metodo copy
@@ -46,22 +47,23 @@ Image::Image(const Image& other)
     this->height = other.height;
     this->width  = other.width;
     this->color_space = other.color_space;
-    int number_channels = this->get_number_channels();
+
+    int number_channels = get_number_channels(color_space);
+
     this->channels = new uint8_t*[number_channels]; // cria um ponteiro para cada canal
 
     if(other.channels != nullptr)
     {
         int elements = this->height * this->width; // quantidade de elementos em cada canal
 
-        for(int i = 0; i < number_channels; i++)
+        for(uint8_t i = 0; i < number_channels; i++)
         {
             this->channels[i] = new uint8_t[elements]; // aloca memoria para cada canal
             memcpy(this->channels[i], other.channels[i], elements * sizeof(uint8_t)); // cópia o bloco de memória 
         }
     }
-    else{
+    else
         this->channels  = nullptr;
-    }
 }
 
 // destrutor 
@@ -69,12 +71,13 @@ Image::~Image()
 {
     if(channels != nullptr)
     {
-        for(int i = 0; i < this->get_number_channels(); i++)
+        uint8_t number_channels = get_number_channels(this->color_space);
+        
+        for(uint8_t i = 0; i < number_channels; i++)
             delete[] channels[i]; // libera memória da heap para cada canal
         delete[] channels; // libera os ponteiros duplos
     }
 }
-
 
 // operador de atribuição
 Image& Image::operator=(const Image& other) {
@@ -83,8 +86,9 @@ Image& Image::operator=(const Image& other) {
     // libera a memória atual 
     if (this->channels != nullptr)
     {
-        int current_channels = this->get_number_channels();
-        for(int i = 0; i < current_channels; i++)
+        int current_channels = get_number_channels(this->color_space);
+
+        for(uint8_t i = 0; i < current_channels; i++)
             delete[] channels[i]; 
         delete[] channels; 
         this->channels = nullptr;
@@ -95,7 +99,7 @@ Image& Image::operator=(const Image& other) {
     this->width  = other.width;
     this->color_space = other.color_space;
     
-    int number_channels = this->get_number_channels(); 
+    uint8_t number_channels = get_number_channels(this->color_space); 
 
     // aloca e copia os dados se a outra imagem possuir canais válidos
     if(other.channels != nullptr)
@@ -103,7 +107,7 @@ Image& Image::operator=(const Image& other) {
         this->channels = new uint8_t*[number_channels]; 
         int elements = this->height * this->width; 
 
-        for(int i = 0; i < number_channels; i++)
+        for(uint8_t i = 0; i < number_channels; i++)
         {
             this->channels[i] = new uint8_t[elements]; 
             memcpy(this->channels[i], other.channels[i], elements * sizeof(uint8_t)); 
@@ -116,8 +120,195 @@ Image& Image::operator=(const Image& other) {
     return *this; 
 }
 
+Image Image::operator+(Image& other) {
+    Image copy(*this);
+
+    uint16_t height = this->height;
+    uint16_t width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint8_t *perl_1 = new uint8_t[number_channels]{0}; 
+    uint8_t *perl_2 = new uint8_t[number_channels]{0}; 
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl_1);
+            other.get_perl(i, j, perl_2);
+
+            sum_perl(perl_1, perl_2, nullptr, number_channels);
+
+            copy.set_perl(i, j, perl_1);
+        }
+    }
+
+    delete[] perl_1;
+    delete[] perl_2;
+
+    return copy;
+}
+
+Image Image::operator-(Image& other) {
+    Image copy(*this);
+
+    uint16_t height = this->height;
+    uint16_t width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint8_t *perl_1 = new uint8_t[number_channels]{0}; 
+    uint8_t *perl_2 = new uint8_t[number_channels]{0}; 
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl_1);
+            other.get_perl(i, j, perl_2);
+
+            sub_perl(perl_1, perl_2, nullptr, number_channels);
+
+            copy.set_perl(i, j, perl_1);
+        }
+    }
+
+    delete[] perl_1;
+    delete[] perl_2;
+
+    return copy;
+}
+
+Image Image::operator&(Image& other) {
+    Image copy(*this);
+
+    uint16_t height = this->height;
+    uint16_t width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint8_t *perl_1 = new uint8_t[number_channels]{0}; 
+    uint8_t *perl_2 = new uint8_t[number_channels]{0}; 
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl_1);
+            other.get_perl(i, j, perl_2);
+
+            bitwise_and_perl(perl_1, perl_2, nullptr, number_channels);
+
+            copy.set_perl(i, j, perl_1);
+        }
+    }
+
+    delete[] perl_1;
+    delete[] perl_2;
+
+    return copy;
+}
+
+Image Image::operator|(Image& other) {
+    Image copy(*this);
+
+    uint16_t height = this->height;
+    uint16_t width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint8_t *perl_1 = new uint8_t[number_channels]{0}; 
+    uint8_t *perl_2 = new uint8_t[number_channels]{0}; 
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl_1);
+            other.get_perl(i, j, perl_2);
+
+            bitwise_or_perl(perl_1, perl_2, nullptr, number_channels);
+
+            copy.set_perl(i, j, perl_1);
+        }
+    }
+
+    delete[] perl_1;
+    delete[] perl_2;
+
+    return copy;
+}
+
+Image Image::operator~() {
+    Image copy(*this);
+
+    int height = this->height;
+    int width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint8_t *perl_1 = new uint8_t[number_channels]{0}; 
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl_1);
+
+            bitwise_not_perl(perl_1, nullptr, number_channels);
+
+            copy.set_perl(i, j, perl_1);
+        }
+    }
+
+    delete[] perl_1;
+
+    return copy;
+}
+
+Image Image::operator*(const double mult) {
+    Image copy(*this);
+
+    int height = this->height;
+    int width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint8_t *perl_1 = new uint8_t[number_channels]{0}; 
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl_1);
+
+            mul_perl(perl_1, nullptr, mult, number_channels);
+
+            copy.set_perl(i, j, perl_1);
+        }
+    }
+
+    delete[] perl_1;
+
+    return copy;
+}
+
+Image Image::operator/(const double div) {
+    Image copy(*this);
+
+    int height = this->height;
+    int width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint8_t *perl_1 = new uint8_t[number_channels]{0}; 
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            this->get_perl(i, j, perl_1);
+
+            div_perl(perl_1, nullptr, div, number_channels);
+
+            copy.set_perl(i, j, perl_1);
+        }
+    }
+
+    delete[] perl_1;
+
+    return copy;
+}
+
 Image Image::get_channel(uint8_t channel) {
-    Image copy = Image(this->height, this->width, 1, nullptr, GRAY); 
+    Image copy = Image(this->height, this->width, nullptr, GRAY); 
     
     memcpy(copy.channels[0], this->channels[channel], (this->height * this->width) * sizeof(uint8_t));
     return copy;
@@ -125,17 +316,17 @@ Image Image::get_channel(uint8_t channel) {
 
 Image Image::negative()
 {
-    Image copy(*this); // cria cópia 
-    return ~copy;
+    Image copy = ~(*this); // aplica o filtro negativo no objeto e atribui em copy  
+    return copy;
 }
 
 Image Image::mean_gray_scale()
 {
-    Image copy = Image(this->height, this->width, 1, nullptr, GRAY);
+    Image copy = Image(this->height, this->width, nullptr, GRAY);
 
-    int number_channels = this->get_number_channels();
-    int height = this->height;
-    int width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
+    uint16_t height = this->height;
+    uint16_t width = this->width;
             
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < height; i++)
@@ -147,13 +338,11 @@ Image Image::mean_gray_scale()
         {
             this->get_perl(i, j, perl);
 
-            int sum = 0; // Usar int para evitar overflow antes da divisão
-            for(int c = 0; c < number_channels; c++)
-            {
+            int sum = 0; 
+            for(uint8_t c = 0; c < number_channels; c++)
                 sum += perl[c]; 
-            }
 
-            uint8_t mean = static_cast<uint8_t>(sum / number_channels);
+            uint8_t mean = (uint8_t) (sum / number_channels); // calcula a media dos canais
 
             copy.set_perl(i, j, &mean);
         }
@@ -166,11 +355,11 @@ Image Image::mean_gray_scale()
 
 Image Image::RGB_TO_GRAY()
 {
-    Image copy = Image(this->height, this->width, 1, nullptr, GRAY);
+    Image copy = Image(this->height, this->width, nullptr, GRAY);
 
-    int height = this->height;
-    int width = this->width;
-    int number_channels = this->get_number_channels();
+    uint16_t height = this->height;
+    uint16_t width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
 
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < height; i++)
@@ -201,9 +390,9 @@ Image Image::binary(const uint8_t thres)
 {
     Image copy(*this);
 
-    int height = this->height;
-    int width = this->width;
-    int number_channels = this->get_number_channels();
+    uint16_t height = this->height;
+    uint16_t width = this->width;
+    uint8_t number_channels = get_number_channels(this->color_space);
 
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < height; i++)
@@ -214,11 +403,9 @@ Image Image::binary(const uint8_t thres)
         {
             this->get_perl(i, j, perl);
 
-            for(int c = 0; c < number_channels; c++)
-            {
+            for(uint8_t c = 0; c < number_channels; c++)
                 perl[c] = (perl[c] > thres) ? 255 : 0;
-            }
-
+            
             copy.set_perl(i, j, perl);
         }
 
@@ -228,13 +415,13 @@ Image Image::binary(const uint8_t thres)
     return copy;
 }
 
-Image Image::mean_blur(int size_kernel) {
+Image Image::mean_blur(const uint16_t size_kernel) {
     Image copy(*this);
 
     // Dimensões da imagem
-    int height = this->get_height();
-    int width = this->get_width();
-    uint8_t number_channels = this->get_number_channels();
+    uint16_t height = this->get_height();
+    uint16_t width = this->get_width();
+    uint8_t number_channels = get_number_channels(this->color_space);
 
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < height; i++)
@@ -247,9 +434,9 @@ Image Image::mean_blur(int size_kernel) {
         for(int j = 0; j < width; j++)
         {
             // Reseta o acumulador e contadores para o pixel atual
-            for(int c = 0; c < number_channels; c++) {
+            for(uint8_t c = 0; c < number_channels; c++) 
                 means[c] = 0.0;
-            }
+            
             int valid_elements = 0;
 
             // Varredura da vizinhança (Kernel)
@@ -267,11 +454,9 @@ Image Image::mean_blur(int size_kernel) {
                         this->get_perl(neighbor_y, neighbor_x, neighbor_perl);
 
                         // Incrementa as somas para cada canal
-                        for(int c = 0; c < number_channels; c++)
-                        {
+                        for(uint8_t c = 0; c < number_channels; c++)
                             means[c] += neighbor_perl[c];
-                        }
-
+                        
                         valid_elements++;
                     }
                 }
@@ -279,12 +464,9 @@ Image Image::mean_blur(int size_kernel) {
 
             // Calcula a média final e converte para uint8_t 
             if(valid_elements > 0)
-            {
-                for(int c = 0; c < number_channels; c++)
-                {
-                    mean_p[c] = static_cast<uint8_t>(means[c] / valid_elements);
-                }
-            }
+                for(uint8_t c = 0; c < number_channels; c++)
+                    mean_p[c] = (uint8_t)(means[c] / valid_elements);
+                
 
             // Substitui os valores na imagem 
             copy.set_perl(i, j, mean_p);
@@ -298,12 +480,12 @@ Image Image::mean_blur(int size_kernel) {
     return copy;
 }
 
-Image Image::median_blur(int size_kernel) {
+Image Image::median_blur(const uint16_t size_kernel) {
     Image copy(*this);
 
-    int height = this->get_height();
-    int width = this->get_width();
-    uint8_t number_channels = this->get_number_channels();
+    uint16_t height = this->get_height();
+    uint16_t width = this->get_width();
+    uint8_t number_channels = get_number_channels(this->color_space);
 
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < height; i++)
@@ -331,16 +513,15 @@ Image Image::median_blur(int size_kernel) {
                         this->get_perl(neighbor_y, neighbor_x, neighbor_perl);
 
                         // Insere a intensidade da vizinhança no canal correspondente
-                        for(int c = 0; c < number_channels; c++)
-                        {
+                        for(uint8_t c = 0; c < number_channels; c++)
                             medians[c].push_back(neighbor_perl[c]);
-                        }
+                        
                     }
                 }
             }
 
             // Calcula a mediana para cada canal
-            for(int c = 0; c < number_channels; c++)
+            for(uint8_t c = 0; c < number_channels; c++)
             {
                 if(!medians[c].empty())
                 {
@@ -351,9 +532,9 @@ Image Image::median_blur(int size_kernel) {
                     int median_idx = medians[c].size() / 2;
                     median_p[c] = medians[c][median_idx];  
                 }
-                else {
+                else
                     median_p[c] = 0;
-                }
+                
             }
 
             copy.set_perl(i, j, median_p);
@@ -367,10 +548,11 @@ Image Image::median_blur(int size_kernel) {
     return copy;
 }
 
+// Histograma de quantidade de perls
 std::vector<int> Image::hist(const uint8_t channel)
 {
     std::vector<int> frequency(256, 0);
-    uint8_t *perl = new uint8_t[this->get_number_channels()];
+    uint8_t *perl = new uint8_t[get_number_channels(this->color_space)];
 
     for(int i = 0; i < this->height; i++)
     {
@@ -385,55 +567,48 @@ std::vector<int> Image::hist(const uint8_t channel)
     return frequency;
 }
 
+// Histograma de frequencia 
 std::vector<double> Image::hist(const uint8_t channel, const bool is_norm)
 {
     std::vector<double> frequency(256, 0);
-    uint8_t *perl = new uint8_t[this->get_number_channels()];
-
-    for(int i = 0; i < this->height; i++)
-    {
-        for(int j = 0; j < this->width; j++)
-        {
-            this->get_perl(i, j, perl);
-            frequency[perl[channel]]++;
-        }   
-    }
-
-    delete [] perl;
+    std::vector<int> perls = this->hist(channel); // calcula a quantidade de perl por intensida    
 
     if(is_norm)
-        for(int i = 0; i < 256; i++)
-            frequency[i] = frequency[i] /  (this->height * this->width);
+        for(uint16_t i = 0; i < 256; i++)
+            frequency[i] = perls[i] /  (double) (this->height * this->width);
 
     return frequency;
 }
 
+// Retorna o canal da imagem equalizado
 Image Image::equalize(const uint8_t channel)
 {
-    Image copy = this->get_channel(channel);
-    std::vector<int> frequency = copy.hist(0);
-    std::vector<double> accumulated(256, 0);
-    std::vector<int> transform_function(256, 0);
+    Image copy = this->get_channel(channel); // Pega o canal selecionado
 
-    int height = copy.get_height();
-    int width = copy.get_width();
+    std::vector<int> frequency = copy.hist(0); // histograma da imagem
+    double accumulated[256] = {0}; // vetor para a acumulada
+    uint8_t transform_function[256] = {0}; // vetor para a função de mapeamento
+
+    uint16_t height = copy.get_height();
+    uint16_t width = copy.get_width();
 
     int full_perls = height * width;
 
-    for(int i = 0; i < 256; i++){
-        if(i > 0)
-            accumulated[i] = (accumulated[i - 1]) + (frequency[i] / (double) full_perls);
-        else
-            accumulated[i] = (frequency[i] / (double) full_perls);
+    // calcula a acumulada e mapeamento inicial
+    accumulated[0] = (frequency[0] / (double) full_perls); 
+    transform_function[0] = std::round(accumulated[0] * 255);
 
+    for(uint16_t i = 1; i < 256; i++){
+        accumulated[i] = (accumulated[i - 1]) + (frequency[i] / (double) full_perls);
         transform_function[i] = std::round(accumulated[i] * 255);  
     }
 
-    uint8_t *perl = new uint8_t[copy.get_number_channels()];
+    uint8_t *perl = new uint8_t[get_number_channels(copy.get_color_space())];
 
-    for(int i = 0; i < copy.get_height(); i++)
+    // Aplica a função de transformação
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < copy.get_width(); j++)
+        for(int j = 0; j < width; j++)
         {
             copy.get_perl(i, j, perl);
             *perl = transform_function[*perl]; // aplica a função de transformação
@@ -451,18 +626,18 @@ Image Image::equalize_esp(const uint8_t channel, std::vector<double> hist_esp)
     Image copy = this->get_channel(channel);
 
     std::vector<int> hist_origem  = copy.hist(0);
-    std::vector<double> accumulated_origem(256, 0);
-    std::vector<double> accumulated_esp(256, 0);
-    std::vector<double> transform_origem(256, 0);
-    std::vector<double> transform_esp(256, 0);
-    std::vector<double> transform_origem_to_esp(256, 0);
+    double *accumulated_origem = new double[256]{0};
+    double *accumulated_esp = new double[256]{0};
+    double *transform_origem = new double[256]{0};
+    double *transform_esp = new double[256]{0};
+    uint8_t *transform_origem_to_esp = new uint8_t[256]{};
 
-    int height = copy.get_height();
-    int width = copy.get_width();
+    uint16_t height = copy.get_height();
+    uint16_t width = copy.get_width();
 
     int full_perls = height * width;
 
-    for(int i = 0; i < 256; i++){
+    for(uint16_t i = 0; i < 256; i++){
         if(i > 0){
             accumulated_origem[i] = (accumulated_origem[i - 1]) + (hist_origem[i] / (double) full_perls);
             accumulated_esp[i] = (accumulated_esp[i - 1]) + hist_esp[i];
@@ -476,13 +651,17 @@ Image Image::equalize_esp(const uint8_t channel, std::vector<double> hist_esp)
         transform_esp[i] = accumulated_esp[i] * 255; // Função de transformação da especificada
     }
 
-    // Faz o emparelhamento entre as funções de transformaçõeos
-    for(int i = 0; i < 256; i++)
-    {
-        int dist = std::abs(transform_origem[i] - transform_esp[0]);
-        int index_min = 0;
+    // libera a memoria das acumuladas
+    delete[] accumulated_origem;
+    delete[] accumulated_esp;
 
-        for(int j = 0; j < 256; j++)
+    // Faz o emparelhamento entre as funções de transformaçõeos
+    for(uint16_t i = 0; i < 256; i++)
+    {
+        uint8_t dist = std::abs(transform_origem[i] - transform_esp[0]);
+        uint8_t index_min = 0;
+
+        for(uint16_t j = 0; j < 256; j++)
         {
             if(dist > std::abs(transform_origem[i] - transform_esp[j])){
                 index_min = j;
@@ -493,7 +672,11 @@ Image Image::equalize_esp(const uint8_t channel, std::vector<double> hist_esp)
         transform_origem_to_esp[i] = index_min;
     }
 
-    uint8_t *perl = new uint8_t[copy.get_number_channels()];
+    // libera memoria das funcoes de transformacao
+    delete [] transform_origem;
+    delete [] transform_esp;
+
+    uint8_t *perl = new uint8_t[get_number_channels(copy.get_color_space())];
 
     for(int i = 0; i < height; i++)
     {
@@ -506,6 +689,7 @@ Image Image::equalize_esp(const uint8_t channel, std::vector<double> hist_esp)
     }
 
     delete [] perl;
+    delete [] transform_origem_to_esp;
 
     return copy;
 }
@@ -518,7 +702,7 @@ void Image::write_hist(const char path[])
 
     if(file.is_open())
     {
-        for(int i = 0; i < 256; i++)
+        for(uint16_t i = 0; i < 256; i++)
         {
             file << "Intensidade: " << i << "  Frequencia: " << frequency[i] << std::endl;
         }

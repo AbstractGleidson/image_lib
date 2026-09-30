@@ -1,6 +1,7 @@
 #include <perl.hpp>
 #include <stdint.h>
 
+// soma dois perls
 void sum_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels)
 {
     if (perl_dst == nullptr)
@@ -12,6 +13,7 @@ void sum_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t
     }
 }
 
+// subtrai dois perls
 void sub_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t channels)
 {
     if (perl_dst == nullptr)
@@ -23,6 +25,31 @@ void sub_perl(uint8_t *perl_1, uint8_t *perl_2, uint8_t *perl_dst, const uint8_t
     }
 }
 
+// soma um perl com um escalar
+void sum_perl_number(uint8_t *perl_1, const uint8_t number, uint8_t *perl_dst, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // soma e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = std::min(std::max(perl_1[i] + number, 0), 255);
+    }
+}
+
+// subtrai um perl com um escalar
+void sub_perl_number(uint8_t *perl_1, const uint8_t number, uint8_t *perl_dst, const uint8_t channels)
+{
+    if (perl_dst == nullptr)
+        perl_dst = perl_1; // soma e coloca o resultado no perl_1
+
+    for(int i = 0; i < channels; i++)
+    {
+        perl_dst[i] = std::min(std::max(perl_1[i] - number, 0), 255);
+    }
+}
+
+// multiplica um perl por um escalar 
 void mul_perl(uint8_t *perl_1, uint8_t *perl_dst, const double number, const uint8_t channels)
 {
     if (perl_dst == nullptr)
