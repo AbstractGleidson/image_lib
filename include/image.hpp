@@ -1,11 +1,12 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
-#include <utils.hpp>
 #include <perl.hpp>
 #include <vector>
+#include <utils.hpp>
 #include <algorithm>
+#include <cmath>
+#include <fstream>
+#include <iostream>
 
 // Formatos de imagem 
 enum ImageFormat{BMP, JPG, PNG};
@@ -165,7 +166,11 @@ class Image
 
         void write_hist(const char path[]);
 
-        void show_hist();
+        void write_hist(const char path[], const bool is_norm);
+
+        void show_hist(const std::string& title, const std::string& save_path, const bool is_norm = false);
+
+        void show_mult_hist(Image& other, const std::string& title, std::vector<std::string>& labels, const std::string& save_path, const bool is_norm = false);
 
         friend ImageAcessStatus read_bmp(const char* path_image, Image& image_dst, const bool is_true_color);
         friend ImageAcessStatus write_bmp(const char* path_image, Image& image_src, const bool is_true_color);
